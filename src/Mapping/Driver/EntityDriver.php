@@ -68,6 +68,14 @@ class EntityDriver implements
                     'quoted' => true
                 ]
             );
+
+            // Created index on audited primary key
+            if ($auditedClassMetadata->isIdentifier($fieldName)) {
+                $builder->addIndex(
+                    [$fieldName],
+                    $this->generateIdentifierName([$auditedClassMetadata->getTableName(), $fieldName], 'idx')
+                );
+            }
         }
 
         foreach ($auditedClassMetadata->getAssociationMappings() as $mapping) {
@@ -139,4 +147,15 @@ class EntityDriver implements
         return true;
     }
     // @codeCoverageIgnoreEnd
+
+
+    // Copied from Doctrine\DBAL\Schema\AbstractAsset
+    protected function generateIdentifierName($columnNames, $prefix = '', $maxSize = 30)
+    {
+        $hash = implode('', array_map(static function ($column) {
+            return dechex(crc32($column));
+        }, $columnNames));
+
+        return strtoupper(substr($prefix . '_' . $hash, 0, $maxSize));
+    }
 }
